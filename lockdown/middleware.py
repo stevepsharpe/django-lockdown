@@ -76,6 +76,12 @@ class LockdownMiddleware(object):
         if settings.ENABLED is False:
             return None
 
+        # Don't lockdown if the subdomain is inside of exclusion list
+        if settings.SUBDOMAIN_EXCEPTIONS is not None:
+            subdomain = request.get_host().split('.')[0]
+            if subdomain in settings.SUBDOMAIN_EXCEPTIONS:
+                return None
+
         # Don't lock down if the URL matches an exception pattern.
         if self.url_exceptions is None:
             url_exceptions = _default_url_exceptions
@@ -156,3 +162,7 @@ class LockdownMiddleware(object):
         if querystring:
             url = '%s?%s' % (url, querystring.urlencode())
         return HttpResponseRedirect(url)
+
+    def get_host(self, request):
+        request_host = request.get_host()
+        match = host.compiled_regex.match(request_host)
